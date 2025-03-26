@@ -1,6 +1,6 @@
 module github.com/clbiggs/git-sync
 
-go 1.24.0
+go 1.24
 
 tool (
 	github.com/client9/misspell/cmd/misspell
