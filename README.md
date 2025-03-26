@@ -13,58 +13,16 @@
 
 ## Description
 
-This is a GitHub repository template for a Go application.
-You can use it:
+This is an application with the intention of making sure that a git repository is up to date with its origin.
 
-- to create a new repository with automation and environment setup,
-- as reference when improving automation for an existing repository.
+This is done by the following:
+- Polling of the origin repository.
+- Immediate Pull and reset by api endpoint.
 
-It includes:
+If the local repository does not exist it will be cloned.
 
-- continuous integration via [GitHub Actions](https://github.com/features/actions),
-- build automation via [Make](https://www.gnu.org/software/make),
-- dependency management using [Go Modules](https://github.com/golang/go/wiki/Modules),
-- code formatting using [gofumpt](https://github.com/mvdan/gofumpt),
-- linting with [golangci-lint](https://github.com/golangci/golangci-lint)
-  and [misspell](https://github.com/client9/misspell),
-- unit testing with
-  [race detector](https://blog.golang.org/race-detector),
-  code coverage [HTML report](https://blog.golang.org/cover)
-  and [Codecov report](https://codecov.io/),
-- releasing using [GoReleaser](https://github.com/goreleaser/goreleaser),
-- dependencies scanning and updating thanks to [Dependabot](https://dependabot.com),
-- security code analysis using [CodeQL Action](https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/about-code-scanning),
-  and [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck),
-- [Visual Studio Code](https://code.visualstudio.com) configuration with [Go](https://code.visualstudio.com/docs/languages/go) support.
-
-## Usage
-
-1. Sign up on [Codecov](https://codecov.io/) and configure
-   [Codecov GitHub Application](https://github.com/apps/codecov).
-1. Click the `Use this template` button (alt. clone or download this repository).
-1. Replace all occurrences of `clbiggs/git-sync` to `your_org/repo_name` in all files.
-1. Replace all occurrences of `seed` to `repo_name` in [Dockerfile](Dockerfile).
-1. Follow [these](https://docs.codecov.com/docs/adding-the-codecov-token#github-actions)
-   instructions to add the `CODECOV_TOKEN` GitHub Actions and Dependabot secret.
-1. Update the following files:
-   - [CHANGELOG.md](CHANGELOG.md)
-   - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-   - [LICENSE](LICENSE)
-   - [README.md](README.md)
-
-## Setup
-
-Below you can find sample instructions on how to set up the development environment.
-Of course, you can use other tools like [GoLand](https://www.jetbrains.com/go/),
-[Vim](https://github.com/fatih/vim-go), [Emacs](https://github.com/dominikh/go-mode.el).
-However, take notice that the Visual Studio Go extension is
-[officially supported](https://blog.golang.org/vscode-go) by the Go team.
-
-1. Install [Go](https://golang.org/doc/install).
-1. Install [Visual Studio Code](https://code.visualstudio.com/).
-1. Install [Go extension](https://code.visualstudio.com/docs/languages/go).
-1. Clone and open this repository.
-1. `F1` -> `Go: Install/Update Tools` -> (select all) -> OK.
+The repository is only updated during polling if the latest commit has a different hash than the last pulled, or upon
+application startup.
 
 ## Build
 
@@ -72,10 +30,6 @@ However, take notice that the Visual Studio Go extension is
 
 - `make` - execute the build pipeline.
 - `make help` - print help for the [Make targets](Makefile).
-
-### Visual Studio Code
-
-`F1` → `Tasks: Run Build Task (Ctrl+Shift+B or ⇧⌘B)` to execute the build pipeline.
 
 ## Release
 
@@ -98,24 +52,6 @@ Notable files:
 - [Makefile](Makefile) - Make targets used for development, [CI build](.github/workflows) and [.vscode/tasks.json](.vscode/tasks.json),
 
 ## FAQ
-
-### Why Visual Studio Code editor configuration
-
-Developers that use Visual Studio Code can take advantage of the editor configuration.
-While others do not have to care about it.
-Setting configs for each repo is unnecessary time consuming.
-VS Code is the most popular Go editor ([survey](https://blog.golang.org/survey2019-results))
-and it is officially [supported by the Go team](https://blog.golang.org/vscode-go).
-
-You can always remove the [.vscode](.vscode) directory if it really does not help you.
-
-### Why GitHub Actions, not any other CI server
-
-GitHub Actions is out-of-the-box if you are already using GitHub.
-[Here](https://github.com/mvdan/github-actions-golang) you can learn how to use it for Go.
-
-However, changing to any other CI server should be very simple,
-because this repository has build logic and tooling installation in [Makefile](Makefile).
 
 ### How can I build on Windows
 
