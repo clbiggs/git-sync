@@ -4,7 +4,8 @@ before:
   hooks:
     - go mod download
 builds:
-  - env:
+  - main: ./cmd/git-sync
+    env:
       - CGO_ENABLED=0
     goos:
       - darwin
