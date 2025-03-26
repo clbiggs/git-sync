@@ -23,15 +23,20 @@ type Configuration struct {
 	WebhookUsername     string
 	WebhookPassword     string
 	WebhookPasswordFile string
+	ServerAddr          string
 }
 
-var (
-	config Configuration
+const (
+	DefaultInterval   = 900
+	DefaultServerAddr = ":8080"
 )
+
+var config Configuration
 
 func main() {
 	loadConfigFromFlagsOrEnv()
 
+	log.Printf("Repo: %s", config.Repo)
 }
 
 func loadConfigFromFlagsOrEnv() {
@@ -39,7 +44,7 @@ func loadConfigFromFlagsOrEnv() {
 	path := flag.String("path", os.Getenv("TARGET_PATH"), "Local repo path")
 	branch := flag.String("branch", getEnv("BRANCH", "main"), "Branch to track")
 	bundleFile := flag.String("ca-bundle-file", os.Getenv("CA_BUNDLE"), "CA Certificate bundle file path")
-	interval := flag.Duration("interval", getEnvDuration("POLL_INTERVAL", 900*time.Second), "Polling interval")
+	interval := flag.Duration("interval", getEnvDuration("POLL_INTERVAL", DefaultInterval*time.Second), "Polling interval")
 	username := flag.String("username", os.Getenv("GIT_USERNAME"), "Git username/token")
 	password := flag.String("password", os.Getenv("GIT_PASSWORD"), "Git password/token")
 	passwordFile := flag.String("password-file", os.Getenv("GIT_PASSWORD_FILE"), "Path to file containing Git password/token")
@@ -49,6 +54,7 @@ func loadConfigFromFlagsOrEnv() {
 	webUsername := flag.String("webhook-username", os.Getenv("WEBHOOK_USERNAME"), "Webhook basic auth user")
 	webPassword := flag.String("webhook-password", os.Getenv("WEBHOOK_PASSWORD"), "Webhook basic auth password")
 	webPasswordFile := flag.String("webhook-password-file", os.Getenv("WEBHOOK_PASSWORD_FILE"), "Webhook basic auth password file path")
+	serverAddr := flag.String("server-address", getEnv("SERVER_ADDRESS", DefaultServerAddr), "Webhook server address")
 
 	flag.Parse()
 
@@ -67,6 +73,7 @@ func loadConfigFromFlagsOrEnv() {
 		WebhookUsername:     *webUsername,
 		WebhookPassword:     *webPassword,
 		WebhookPasswordFile: *webPasswordFile,
+		ServerAddr:          *serverAddr,
 	}
 }
 
@@ -80,7 +87,7 @@ func getEnv(key, fallback string) string {
 func getEnvBool(key string, fallback bool) bool {
 	valStr := os.Getenv(key)
 	if valStr == "" {
-		return false
+		return fallback
 	}
 
 	val, err := strconv.ParseBool(valStr)
