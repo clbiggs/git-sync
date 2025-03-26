@@ -1,4 +1,4 @@
-module github.com/golang-templates/seed
+module github.com/clbiggs/git-sync
 
 go 1.24.0
 
