@@ -3,9 +3,15 @@ package main
 import (
 	"flag"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/clbiggs/git-sync/internal/handlers"
+	"github.com/clbiggs/git-sync/internal/middleware"
+	"github.com/clbiggs/git-sync/pkg/git/syncer"
+	"github.com/gorilla/mux"
 )
 
 type Configuration struct {
@@ -27,8 +33,9 @@ type Configuration struct {
 }
 
 const (
-	DefaultInterval   = 900
-	DefaultServerAddr = ":8080"
+	DefaultInterval            = 900
+	DefaultServerAddr          = ":8080"
+	DefaultServerHeaderTimeout = 3
 )
 
 var config Configuration
@@ -36,7 +43,65 @@ var config Configuration
 func main() {
 	loadConfigFromFlagsOrEnv()
 
-	log.Printf("Repo: %s", config.Repo)
+	sync := syncer.NewSyncer(syncer.SyncOptions{
+		Path:         config.Path,
+		Branch:       config.Branch,
+		CABuntleFile: config.CABuntleFile,
+		PollInterval: config.PollInterval,
+		Auth: syncer.AuthOptions{
+			Repo:              config.Repo,
+			Username:          config.Username,
+			Password:          config.Password,
+			PasswordFile:      config.PasswordFile,
+			SSHPrivateKeyFile: config.SSHPrivateKeyFile,
+			InsecureSkipTLS:   config.InsecureSkipTLS,
+			KnownHostsFile:    config.KnownHostsFile,
+		},
+	})
+
+	// Start polling and syncing repo.
+	sync.Start()
+
+	server, err := setupHTTPServer(config.ServerAddr, sync)
+	if err != nil {
+		log.Fatalf("Error building router: %v", err)
+	}
+
+	log.Printf("Server started on %s", config.ServerAddr)
+	log.Fatal(server.ListenAndServe())
+}
+
+func setupHTTPServer(serverAddress string, sync *syncer.Syncer) (*http.Server, error) {
+	router, err := setupRouter(sync)
+	if err != nil {
+		return nil, err
+	}
+
+	return &http.Server{
+		Addr:              serverAddress,
+		ReadHeaderTimeout: DefaultServerHeaderTimeout * time.Second,
+		Handler:           router,
+	}, nil
+}
+
+func setupRouter(sync *syncer.Syncer) (*mux.Router, error) {
+	router := mux.NewRouter()
+	var password string
+	if config.WebhookPasswordFile != "" {
+		tmpPass, err := os.ReadFile(config.WebhookPasswordFile)
+		if err != nil {
+			return nil, err
+		}
+		password = string(tmpPass)
+	} else if config.WebhookPassword != "" {
+		password = config.WebhookPassword
+	}
+
+	router.HandleFunc("/webhook", middleware.BasicAuthMiddleware(handlers.WebhookHandler(sync), config.WebhookUsername, password)).Methods("POST")
+	router.HandleFunc("/status", handlers.StatusHandler(sync)).Methods("GET")
+	router.HandleFunc("/liveness", handlers.LivenessHandler()).Methods("GET")
+
+	return router, nil
 }
 
 func loadConfigFromFlagsOrEnv() {
