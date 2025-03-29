@@ -12,6 +12,7 @@ tool (
 require (
 	github.com/go-git/go-git/v5 v5.13.1
 	github.com/gorilla/mux v1.8.1
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.35.0
 )
 
@@ -400,7 +401,6 @@ require (
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
 	github.com/stbenjam/no-sprintf-host-port v0.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tdakkota/asciicheck v0.4.1 // indirect
 	github.com/tetafro/godot v1.5.0 // indirect
