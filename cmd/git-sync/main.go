@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/clbiggs/git-sync/internal/handlers"
@@ -26,6 +27,7 @@ type Configuration struct {
 	InsecureSkipTLS     bool
 	KnownHostsFile      string
 	PollInterval        time.Duration
+	EnableWebhook       bool
 	WebhookUsername     string
 	WebhookPassword     string
 	WebhookPasswordFile string
@@ -42,6 +44,7 @@ var config Configuration
 
 func main() {
 	loadConfigFromFlagsOrEnv()
+    validateConfig()
 
 	sync := syncer.NewSyncer(syncer.SyncOptions{
 		Path:         config.Path,
@@ -58,6 +61,12 @@ func main() {
 			KnownHostsFile:    config.KnownHostsFile,
 		},
 	})
+
+	// Perform initial sync
+	err := sync.SyncRepo(true)
+	if err != nil {
+		log.Fatalf("failed initial sync: %v", err)
+	}
 
 	// Start polling and syncing repo.
 	sync.Start()
@@ -97,7 +106,9 @@ func setupRouter(sync *syncer.Syncer) (*mux.Router, error) {
 		password = config.WebhookPassword
 	}
 
-	router.HandleFunc("/webhook", middleware.BasicAuthMiddleware(handlers.WebhookHandler(sync), config.WebhookUsername, password)).Methods("POST")
+	if config.EnableWebhook {
+		router.HandleFunc("/webhook", middleware.BasicAuthMiddleware(handlers.WebhookHandler(sync), config.WebhookUsername, password)).Methods("POST")
+	}
 	router.HandleFunc("/status", handlers.StatusHandler(sync)).Methods("GET")
 	router.HandleFunc("/liveness", handlers.LivenessHandler()).Methods("GET")
 
@@ -116,6 +127,7 @@ func loadConfigFromFlagsOrEnv() {
 	sshFile := flag.String("ssh-key-file", os.Getenv("GIT_SSHKEY_FILE"), "Path to file containing Git SSH Private key")
 	insecure := flag.Bool("insecure", getEnvBool("INSECURE_TLS", false), "Use insecure TLS connection")
 	knownHosts := flag.String("known-hosts-file", os.Getenv("KNOWN_HOSTS_FILE"), "Path to file containing known hosts")
+	enableWebhook := flag.Bool("webhook-enabled", getEnvBool("WEBHOOK_ENABLED", true), "Enable/Disble the webhook api. Default: true")
 	webUsername := flag.String("webhook-username", os.Getenv("WEBHOOK_USERNAME"), "Webhook basic auth user")
 	webPassword := flag.String("webhook-password", os.Getenv("WEBHOOK_PASSWORD"), "Webhook basic auth password")
 	webPasswordFile := flag.String("webhook-password-file", os.Getenv("WEBHOOK_PASSWORD_FILE"), "Webhook basic auth password file path")
@@ -135,11 +147,27 @@ func loadConfigFromFlagsOrEnv() {
 		InsecureSkipTLS:     *insecure,
 		KnownHostsFile:      *knownHosts,
 		PollInterval:        *interval,
+		EnableWebhook:       *enableWebhook,
 		WebhookUsername:     *webUsername,
 		WebhookPassword:     *webPassword,
 		WebhookPasswordFile: *webPasswordFile,
 		ServerAddr:          *serverAddr,
 	}
+}
+
+func validateConfig() {
+	missing := []string{}
+	if config.Repo == "" {
+		missing = append(missing, "repo")
+	}
+	if config.Path == "" {
+		missing = append(missing, "path")
+	}
+
+	if len(missing) > 0 {
+		log.Fatalf("Missing required parameters: %s", strings.Join(missing, ", "))
+	}
+
 }
 
 func getEnv(key, fallback string) string {

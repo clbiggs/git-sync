@@ -75,7 +75,7 @@ func (s *Syncer) Start() {
 	s.pollingCtx = ctx
 	s.pollingCancel = cancel
 
-	s.startPolling(ctx)
+	go s.startPolling(ctx)
 }
 
 func (s *Syncer) Stop() {
