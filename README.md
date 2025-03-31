@@ -26,7 +26,7 @@ application startup.
 
 ### Arguments
 
-| Command Argument | Environment Variable | Descripiton |
+| Command Argument | Environment Variable | Description |
 | - | - | - |
 | `--repo <uri>` | `GIT_REPO` | The uri (url, file, ssh) for the git repository. (**Required**)|
 | `--path <dir_path>` | `TARGET_PATH` | The local target file path for the git repository. (**Required**)|
