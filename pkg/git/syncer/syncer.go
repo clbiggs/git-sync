@@ -131,25 +131,24 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		}
 	}
 
-	w, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
-	}
-
 	err = fetchRepo(ctx, repo, s.Options)
-	if err != nil {
+	if err != nil && err != git.NoErrAlreadyUpToDate {
 		return fmt.Errorf("fetch failed: %w", err)
 	}
 
-	ref, err := repo.Reference(plumbing.NewBranchReferenceName(s.Options.Branch), true)
+	ref, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", s.Options.Branch), true)
 	if err != nil {
 		return fmt.Errorf("reference error: %w", err)
 	}
 
 	hash := ref.Hash().String()
 	if forcePull || hash != s.status.LatestHash {
+		w, err := repo.Worktree()
+		if err != nil {
+			return fmt.Errorf("failed to get worktree: %w", err)
+		}
 		log.Println("Updating repo to latest commit", hash)
-		err := pullRepo(ctx, w, s.Options)
+		err = pullRepo(ctx, w, s.Options)
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return fmt.Errorf("pull failed: %w", err)
 		}
