@@ -44,7 +44,7 @@ var config Configuration
 
 func main() {
 	loadConfigFromFlagsOrEnv()
-    validateConfig()
+	validateConfig()
 
 	sync := syncer.NewSyncer(syncer.SyncOptions{
 		Path:         config.Path,
@@ -167,7 +167,6 @@ func validateConfig() {
 	if len(missing) > 0 {
 		log.Fatalf("Missing required parameters: %s", strings.Join(missing, ", "))
 	}
-
 }
 
 func getEnv(key, fallback string) string {
