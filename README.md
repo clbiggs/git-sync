@@ -1,4 +1,4 @@
-# Go Repository Template
+# Git-Sync
 
 [![Keep a Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-%23E05735)](CHANGELOG.md)
 [![Go Reference](https://pkg.go.dev/badge/github.com/clbiggs/git-sync.svg)](https://pkg.go.dev/github.com/clbiggs/git-sync)
@@ -21,8 +21,31 @@ This is done by the following:
 
 If the local repository does not exist it will be cloned.
 
-The repository is only updated during polling if the latest commit has a different hash than the last pulled, or upon
+The repository is only updated during polling if the latest remote commit has a different hash than the last pulled, or upon
 application startup.
+
+### Arguments
+
+| Command Argument | Environment Variable | Descripiton |
+| - | - | - |
+| `--repo <uri>` | `GIT_REPO` | The uri (url, file, ssh) for the git repository. (**Required**)|
+| `--path <dir_path>` | `TARGET_PATH` | The local target file path for the git repository. (**Required**)|
+| `--branch <name>` | `BRANCH` | The branch to track. (Default: `main`) |
+| `--ca-bundle-file <file_path>` | `CA_BUNDLE` | The path to a CA Certificate bundle file. |
+| `--interval <interval>` | `POLL_INTERVAL` | The polling interval. (Default: `900s`) |
+| `--username <string>` | `GIT_USERNAME` | The username/token for the remote git repository. |
+| `--password <string>` | `GIT_PASSWORD` | The password for the remote git repository. |
+| `--password-file <file_path>` | `GIT_PASSWORD_FILE` | The path to a file containing the passord for the remote git repository. This is ignored if `--password` is provided. |
+| `--ssh-file <file_path>` | `GIT_SSHKEY_FILE` | The path to a file containing a SSH Private Key for the remote git repository. |
+| `--insecure <bool>` | `INSECURE_TLS` | If set to `true` insecure TLS connections are allowed. (Default: `false`) |
+| `--known-hosts-file <file_path>` | `KNOWN_HOSTS_FILE` | The path to a file containing known hosts for SSH. |
+| `--webhook-enabled <bool>` | `WEBHOOK_ENABLED` | Indicates if the webhook api is enalbed. Even if webhook is not enabled the web server will still run. (Default: `true`) |
+| `--webhook-username <string>` | `WEBHOOK_USERNAME` | The username for authentication to the webhook api. |
+| `--webhook-password <string>` | `WEBHOOK_PASSWORD` | The password for authentication to the webhook api. |
+| `--webhook-password-file <file_path>` | `WEBHOOK_PASSWORD_FILE` | The path to a file containing the password for authentication to the webhook api. |
+| `--server-address <string>` | `SERVER_ADDRESS` | The server address for webhook/status/liveness apis. (Default: `:8080`) |
+
+
 
 ## Build
 
