@@ -11,7 +11,7 @@ import (
 func WebhookHandler(sync *syncer.Syncer) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		log.Println("Webhook triggered: forcing pull")
-		err := sync.SyncRepo(true)
+		err := sync.ForceSync()
 		if err != nil {
 			details := map[string]any{
 				"error":  err.Error(),

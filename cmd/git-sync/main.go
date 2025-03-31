@@ -63,7 +63,7 @@ func main() {
 	})
 
 	// Perform initial sync
-	err := sync.SyncRepo(true)
+	err := sync.ForceSync()
 	if err != nil {
 		log.Fatalf("failed initial sync: %v", err)
 	}

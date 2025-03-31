@@ -93,7 +93,7 @@ func (s *Syncer) startPolling(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			err := s.SyncRepo(false)
+			err := s.syncRepo(ctx, false)
 			if err != nil {
 				log.Printf("Error Syncing Repo: %s\n%v", s.Options.Auth.Repo, err)
 			}
@@ -104,7 +104,11 @@ func (s *Syncer) startPolling(ctx context.Context) {
 	}
 }
 
-func (s *Syncer) SyncRepo(forcePull bool) error {
+func (s *Syncer) ForceSync() error {
+	return s.syncRepo(context.Background(), true)
+}
+
+func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	s.statusLock.Lock()
 	defer s.statusLock.Unlock()
 
@@ -114,7 +118,7 @@ func (s *Syncer) SyncRepo(forcePull bool) error {
 	var err error
 
 	if _, err = os.Stat(s.Options.Path); os.IsNotExist(err) {
-		repo, err = cloneRepo(s.pollingCtx, s.Options)
+		repo, err = cloneRepo(ctx, s.Options)
 		if err != nil {
 			return fmt.Errorf("clone failed: %w", err)
 		}
@@ -132,7 +136,7 @@ func (s *Syncer) SyncRepo(forcePull bool) error {
 		return fmt.Errorf("failed to get worktree: %w", err)
 	}
 
-	err = fetchRepo(s.pollingCtx, repo, s.Options)
+	err = fetchRepo(ctx, repo, s.Options)
 	if err != nil {
 		return fmt.Errorf("fetch failed: %w", err)
 	}
@@ -145,7 +149,7 @@ func (s *Syncer) SyncRepo(forcePull bool) error {
 	hash := ref.Hash().String()
 	if forcePull || hash != s.status.LatestHash {
 		log.Println("Updating repo to latest commit", hash)
-		err := pullRepo(s.pollingCtx, w, s.Options)
+		err := pullRepo(ctx, w, s.Options)
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return fmt.Errorf("pull failed: %w", err)
 		}
