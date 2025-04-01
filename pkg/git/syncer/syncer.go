@@ -117,18 +117,17 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	var repo *git.Repository
 	var err error
 
-	if _, err = os.Stat(s.Options.Path); os.IsNotExist(err) {
+	repo, err = openRepo(s.Options)
+
+	if errors.Is(err, git.ErrRepositoryNotExists) || os.IsNotExist(err) {
 		repo, err = cloneRepo(ctx, s.Options)
 		if err != nil {
 			return fmt.Errorf("clone failed: %w", err)
 		}
 
 		s.status.Cloned = true
-	} else {
-		repo, err = openRepo(s.Options)
-		if err != nil {
-			return fmt.Errorf("failed to open repo: %w", err)
-		}
+	} else if err != nil {
+		return fmt.Errorf("failed to open repo: %w", err)
 	}
 
 	err = fetchRepo(ctx, repo, s.Options)
