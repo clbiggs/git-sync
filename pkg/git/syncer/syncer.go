@@ -12,6 +12,7 @@ import (
 	giturls "github.com/clbiggs/git-sync/pkg/git/git-urls"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	httpgit "github.com/go-git/go-git/v5/plumbing/transport/http"
 	gossh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -109,6 +110,10 @@ func (s *Syncer) ForceSync() error {
 }
 
 func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
+	transport.UnsupportedCapabilities = []capability.Capability{
+		capability.ThinPack,
+	}
+
 	s.statusLock.Lock()
 	defer s.statusLock.Unlock()
 
