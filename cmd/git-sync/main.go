@@ -63,10 +63,12 @@ func main() {
 	})
 
 	// Perform initial sync
+	log.Printf("Performing Initial Sync...: %s", sync.Options.Auth.Repo)
 	err := sync.ForceSync()
 	if err != nil {
 		log.Fatalf("failed initial sync: %v", err)
 	}
+	log.Println("Initial Sync Completed.")
 
 	// Start polling and syncing repo.
 	sync.Start()

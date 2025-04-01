@@ -41,7 +41,6 @@ type SyncStatus struct {
 	LastChecked time.Time `json:"last_checked"`
 	LastUpdated time.Time `json:"last_updated"`
 	LatestHash  string    `json:"latest_commit"`
-	Cloned      bool      `json:"cloned"`
 }
 
 type Syncer struct {
@@ -122,23 +121,27 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	var repo *git.Repository
 	var err error
 
+	log.Println("Looking for Repo locally...")
 	repo, err = openRepo(s.Options)
 
 	if errors.Is(err, git.ErrRepositoryNotExists) || os.IsNotExist(err) {
+		log.Println("Repo not found, Clonning...")
 		repo, err = cloneRepo(ctx, s.Options)
 		if err != nil {
 			return fmt.Errorf("clone failed: %w", err)
 		}
 
-		s.status.Cloned = true
+		log.Println("Clonning Completed.")
 	} else if err != nil {
 		return fmt.Errorf("failed to open repo: %w", err)
 	}
 
+	log.Println("Fetching Repo...")
 	err = fetchRepo(ctx, repo, s.Options)
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("fetch failed: %w", err)
 	}
+	log.Println("Fetch Completed.")
 
 	ref, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", s.Options.Branch), true)
 	if err != nil {
@@ -158,6 +161,9 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		}
 		s.status.LatestHash = hash
 		s.status.LastUpdated = time.Now()
+		log.Println("Update Completed.")
+	} else {
+		log.Println("No changes.")
 	}
 
 	return nil
