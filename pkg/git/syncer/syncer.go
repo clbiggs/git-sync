@@ -132,7 +132,7 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	}
 
 	err = fetchRepo(ctx, repo, s.Options)
-	if err != nil && err != git.NoErrAlreadyUpToDate {
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("fetch failed: %w", err)
 	}
 
