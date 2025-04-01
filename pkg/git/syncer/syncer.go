@@ -246,6 +246,8 @@ func getCABundleFromFile(path string) ([]byte, error) {
 	if path == "" {
 		return nil, nil
 	}
+
+	log.Printf("Using CABundle: %s", path)
 	return os.ReadFile(path)
 }
 
