@@ -124,7 +124,8 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	log.Println("Looking for Repo locally...")
 	repo, err = openRepo(s.Options)
 
-	if errors.Is(err, git.ErrRepositoryNotExists) || os.IsNotExist(err) {
+	switch {
+	case errors.Is(err, git.ErrRepositoryNotExists) || os.IsNotExist(err):
 		log.Println("Repo not found, Clonning...")
 		repo, err = cloneRepo(ctx, s.Options)
 		if err != nil {
@@ -132,8 +133,14 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		}
 
 		log.Println("Clonning Completed.")
-	} else if err != nil {
+	case err != nil:
 		return fmt.Errorf("failed to open repo: %w", err)
+	default:
+		// if repo already exists, make sure the target branch hasn't changed.
+		err = switchBranch(repo, s.Options)
+		if err != nil {
+			return fmt.Errorf("failed to switch branch: %w", err)
+		}
 	}
 
 	log.Println("Fetching Repo...")
@@ -166,6 +173,31 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		log.Println("No changes.")
 	}
 
+	return nil
+}
+
+func switchBranch(repo *git.Repository, opts SyncOptions) error {
+	headRef, err := repo.Head()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD reference: %w", err)
+	}
+
+	currentBranch := headRef.Name().Short()
+	if currentBranch != opts.Branch {
+		w, err := repo.Worktree()
+		if err != nil {
+			return fmt.Errorf("failed to get worktree: %w", err)
+		}
+
+		log.Printf("Switching from branch %s to %s", currentBranch, opts.Branch)
+		err = w.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.NewBranchReferenceName(opts.Branch),
+			Force:  true,
+		})
+		if err != nil {
+			return fmt.Errorf("checkout failed: %w", err)
+		}
+	}
 	return nil
 }
 
