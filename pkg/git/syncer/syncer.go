@@ -155,12 +155,13 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		return fmt.Errorf("reference error: %w", err)
 	}
 
+	w, err := repo.Worktree()
+	if err != nil {
+		return fmt.Errorf("failed to get worktree: %w", err)
+	}
+
 	hash := ref.Hash().String()
 	if forcePull || hash != s.status.LatestHash {
-		w, err := repo.Worktree()
-		if err != nil {
-			return fmt.Errorf("failed to get worktree: %w", err)
-		}
 		log.Println("Updating repo to latest commit", hash)
 		err = pullRepo(ctx, w, s.Options)
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
@@ -171,6 +172,16 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		log.Println("Update Completed.")
 	} else {
 		log.Println("No changes.")
+
+		// Manually reset the worktree to match the latest commit fully
+		// This is to handle any cases where local did not complete extract, but git commit is pulled
+		err = w.Reset(&git.ResetOptions{
+			Mode:   git.HardReset,
+			Commit: ref.Hash(),
+		})
+		if err != nil {
+			return fmt.Errorf("reset branch failed: %w", err)
+		}
 	}
 
 	return nil
