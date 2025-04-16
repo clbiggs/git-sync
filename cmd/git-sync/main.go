@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -18,7 +19,7 @@ import (
 type Configuration struct {
 	Repo                string
 	Path                string
-	Branch              string
+	RefName             string
 	CABuntleFile        string
 	Username            string
 	Password            string
@@ -48,7 +49,7 @@ func main() {
 
 	sync := syncer.NewSyncer(syncer.SyncOptions{
 		Path:         config.Path,
-		Branch:       config.Branch,
+		RefName:      config.RefName,
 		CABuntleFile: config.CABuntleFile,
 		PollInterval: config.PollInterval,
 		Auth: syncer.AuthOptions{
@@ -120,7 +121,8 @@ func setupRouter(sync *syncer.Syncer) (*mux.Router, error) {
 func loadConfigFromFlagsOrEnv() {
 	repo := flag.String("repo", os.Getenv("GIT_REPO"), "Git repo URL")
 	path := flag.String("path", os.Getenv("TARGET_PATH"), "Local repo path")
-	branch := flag.String("branch", getEnv("BRANCH", "main"), "Branch to track")
+	branch := flag.String("branch", getEnv("BRANCH", "main"), "Branch to track. The <ref> argument takes precident over this.")
+	ref := flag.String("ref", os.Getenv("REF_NAME"), "Reference name. Use the refs/heads/main or refs/tags/v1.0.0 format.")
 	bundleFile := flag.String("ca-bundle-file", os.Getenv("CA_BUNDLE"), "CA Certificate bundle file path")
 	interval := flag.Duration("interval", getEnvDuration("POLL_INTERVAL", DefaultInterval*time.Second), "Polling interval")
 	username := flag.String("username", os.Getenv("GIT_USERNAME"), "Git username/token")
@@ -137,10 +139,15 @@ func loadConfigFromFlagsOrEnv() {
 
 	flag.Parse()
 
+	refname:= *ref
+	if refname == "" {
+		refname = fmt.Sprintf("/refs/heads/%s", *branch)
+	}
+
 	config = Configuration{
 		Repo:                *repo,
 		Path:                *path,
-		Branch:              *branch,
+		RefName:             refname,
 		CABuntleFile:        *bundleFile,
 		Username:            *username,
 		Password:            *password,

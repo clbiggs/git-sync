@@ -31,7 +31,7 @@ type AuthOptions struct {
 
 type SyncOptions struct {
 	Path         string
-	Branch       string
+	RefName       string
 	CABuntleFile string
 	PollInterval time.Duration
 	Auth         AuthOptions
@@ -137,7 +137,7 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		return fmt.Errorf("failed to open repo: %w", err)
 	default:
 		// if repo already exists, make sure the target branch hasn't changed.
-		err = switchBranch(repo, s.Options)
+		err = switchReference(repo, s.Options)
 		if err != nil {
 			return fmt.Errorf("failed to switch branch: %w", err)
 		}
@@ -150,7 +150,7 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	}
 	log.Println("Fetch Completed.")
 
-	ref, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", s.Options.Branch), true)
+	ref, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", s.Options.RefName), true)
 	if err != nil {
 		return fmt.Errorf("reference error: %w", err)
 	}
@@ -187,22 +187,22 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	return nil
 }
 
-func switchBranch(repo *git.Repository, opts SyncOptions) error {
+func switchReference(repo *git.Repository, opts SyncOptions) error {
 	headRef, err := repo.Head()
 	if err != nil {
 		return fmt.Errorf("failed to get HEAD reference: %w", err)
 	}
 
-	currentBranch := headRef.Name().Short()
-	if currentBranch != opts.Branch {
+	currentRef := headRef.String()
+	if currentRef != opts.RefName {
 		w, err := repo.Worktree()
 		if err != nil {
 			return fmt.Errorf("failed to get worktree: %w", err)
 		}
 
-		log.Printf("Switching from branch %s to %s", currentBranch, opts.Branch)
+		log.Printf("Switching from reference %s to %s", currentRef, opts.RefName)
 		err = w.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewBranchReferenceName(opts.Branch),
+			Branch: plumbing.ReferenceName(opts.RefName),
 			Force:  true,
 		})
 		if err != nil {
@@ -227,7 +227,7 @@ func cloneRepo(ctx context.Context, opts SyncOptions) (*git.Repository, error) {
 
 	repo, err := git.PlainCloneContext(ctx, opts.Path, false, &git.CloneOptions{
 		URL:             opts.Auth.Repo,
-		ReferenceName:   plumbing.NewBranchReferenceName(opts.Branch),
+		ReferenceName:   plumbing.ReferenceName(opts.RefName),
 		SingleBranch:    true,
 		Auth:            auth,
 		InsecureSkipTLS: opts.Auth.InsecureSkipTLS,
@@ -289,7 +289,7 @@ func pullRepo(ctx context.Context, worktree *git.Worktree, opts SyncOptions) err
 		Auth:            auth,
 		Force:           true,
 		InsecureSkipTLS: opts.Auth.InsecureSkipTLS,
-		ReferenceName:   plumbing.NewBranchReferenceName(opts.Branch),
+		ReferenceName:   plumbing.ReferenceName(opts.RefName),
 		CABundle:        caBundle,
 	})
 
