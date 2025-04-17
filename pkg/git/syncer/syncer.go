@@ -31,7 +31,7 @@ type AuthOptions struct {
 
 type SyncOptions struct {
 	Path         string
-	RefName       string
+	RefName      string
 	CABuntleFile string
 	PollInterval time.Duration
 	Auth         AuthOptions

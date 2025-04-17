@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -139,9 +138,9 @@ func loadConfigFromFlagsOrEnv() {
 
 	flag.Parse()
 
-	refname:= *ref
+	refname := *ref
 	if refname == "" {
-		refname = fmt.Sprintf("/refs/heads/%s", *branch)
+		refname = "/refs/heads/" + *branch
 	}
 
 	config = Configuration{
