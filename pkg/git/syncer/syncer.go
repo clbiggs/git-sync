@@ -211,6 +211,7 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 
 		err = w.Checkout(&git.CheckoutOptions{
 			Branch: plumbing.NewRemoteReferenceName("origin", opts.RefName),
+			Create: true,
 			Force:  true,
 		})
 		if err != nil {
