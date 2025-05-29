@@ -137,7 +137,7 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 		return fmt.Errorf("failed to open repo: %w", err)
 	default:
 		// if repo already exists, make sure the target branch hasn't changed.
-		err = switchReference(repo, s.Options)
+		err = switchReference(ctx, repo, s.Options)
 		if err != nil {
 			return fmt.Errorf("failed to switch branch: %w", err)
 		}
@@ -187,7 +187,7 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	return nil
 }
 
-func switchReference(repo *git.Repository, opts SyncOptions) error {
+func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions) error {
 	headRef, err := repo.Head()
 	if err != nil {
 		return fmt.Errorf("failed to get HEAD reference: %w", err)
@@ -201,8 +201,16 @@ func switchReference(repo *git.Repository, opts SyncOptions) error {
 		}
 
 		log.Printf("Switching from reference %s to %s", currentRef, opts.RefName)
+
+		log.Println("Fetching Repo to get remote references...")
+		err = fetchRepo(ctx, repo, opts)
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			return fmt.Errorf("fetch failed: %w", err)
+		}
+		log.Println("Fetch Completed.")
+
 		err = w.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.ReferenceName(opts.RefName),
+			Branch: plumbing.NewRemoteReferenceName("origin", opts.RefName),
 			Force:  true,
 		})
 		if err != nil {
