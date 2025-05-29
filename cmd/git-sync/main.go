@@ -12,6 +12,7 @@ import (
 	"github.com/clbiggs/git-sync/internal/handlers"
 	"github.com/clbiggs/git-sync/internal/middleware"
 	"github.com/clbiggs/git-sync/pkg/git/syncer"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/gorilla/mux"
 )
 
@@ -48,7 +49,7 @@ func main() {
 
 	sync := syncer.NewSyncer(syncer.SyncOptions{
 		Path:         config.Path,
-		RefName:      config.RefName,
+		RefName:      plumbing.ReferenceName(config.RefName),
 		CABuntleFile: config.CABuntleFile,
 		PollInterval: config.PollInterval,
 		Auth: syncer.AuthOptions{

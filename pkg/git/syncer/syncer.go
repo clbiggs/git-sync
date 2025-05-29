@@ -31,7 +31,7 @@ type AuthOptions struct {
 
 type SyncOptions struct {
 	Path         string
-	RefName      string
+	RefName      plumbing.ReferenceName
 	CABuntleFile string
 	PollInterval time.Duration
 	Auth         AuthOptions
@@ -150,7 +150,7 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 	}
 	log.Println("Fetch Completed.")
 
-	ref, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", s.Options.RefName), true)
+	ref, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", s.Options.RefName.Short()), true)
 	if err != nil {
 		return fmt.Errorf("reference error: %w", err)
 	}
@@ -194,8 +194,8 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 	}
 
 	currentRef := headRef.Name().String()
-	if currentRef != opts.RefName {
-		log.Printf("Switching from reference %s to %s", currentRef, opts.RefName)
+	if currentRef != opts.RefName.String() {
+		log.Printf("Switching from reference %s to %s", currentRef, opts.RefName.String())
 
 		log.Println("Fetching Repo to get remote references...")
 		err = fetchRepo(ctx, repo, opts)
@@ -204,13 +204,13 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 		}
 		log.Println("Fetch Completed.")
 
-		branches, err := repo.Branches()
+		references, err := repo.References()
 		if err != nil {
-			return fmt.Errorf("no branches exist: %w", err)
+			return fmt.Errorf("no references exist: %w", err)
 		}
 
 		// Dump branch list out for debugging right now
-		_ = branches.ForEach(func(r *plumbing.Reference) error {
+		_ = references.ForEach(func(r *plumbing.Reference) error {
 			log.Printf("%s\n", r.Name().String())
 			return nil
 		})
@@ -221,8 +221,7 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 		}
 
 		err = w.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.ReferenceName(opts.RefName),
-			Create: true,
+			Branch: plumbing.NewBranchReferenceName(opts.RefName.Short()),
 			Force:  true,
 		})
 		if err != nil {
@@ -282,7 +281,7 @@ func cloneRepo(ctx context.Context, opts SyncOptions) (*git.Repository, error) {
 
 	repo, err := git.PlainCloneContext(ctx, opts.Path, false, &git.CloneOptions{
 		URL:             opts.Auth.Repo,
-		ReferenceName:   plumbing.ReferenceName(opts.RefName),
+		ReferenceName:   opts.RefName,
 		SingleBranch:    true,
 		Auth:            auth,
 		InsecureSkipTLS: opts.Auth.InsecureSkipTLS,
@@ -344,7 +343,7 @@ func pullRepo(ctx context.Context, worktree *git.Worktree, opts SyncOptions) err
 		Auth:            auth,
 		Force:           true,
 		InsecureSkipTLS: opts.Auth.InsecureSkipTLS,
-		ReferenceName:   plumbing.ReferenceName(opts.RefName),
+		ReferenceName:   opts.RefName,
 		CABundle:        caBundle,
 	})
 
