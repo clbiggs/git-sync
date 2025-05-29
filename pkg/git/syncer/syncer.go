@@ -208,24 +208,15 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 		}
 		log.Println("Fetch Completed.")
 
-		references, err := repo.References()
-		if err != nil {
-			return fmt.Errorf("no references exist: %w", err)
-		}
-
-		// Dump branch list out for debugging right now
-		_ = references.ForEach(func(r *plumbing.Reference) error {
-			log.Printf("%s\n", r.Name().String())
-			return nil
-		})
-
 		w, err := repo.Worktree()
 		if err != nil {
 			return fmt.Errorf("failed to get worktree: %w", err)
 		}
 
+		remoteRef := plumbing.NewRemoteReferenceName("origin", opts.RefName.Short())
+
 		err = w.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewBranchReferenceName(opts.RefName.Short()),
+			Branch: remoteRef,
 			Force:  true,
 		})
 		if err != nil {
