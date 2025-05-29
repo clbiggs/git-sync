@@ -141,7 +141,7 @@ func loadConfigFromFlagsOrEnv() {
 
 	refname := *ref
 	if refname == "" {
-		refname = "/refs/heads/" + *branch
+		refname = "refs/heads/" + *branch
 	}
 
 	config = Configuration{
