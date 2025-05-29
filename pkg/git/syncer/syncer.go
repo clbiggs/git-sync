@@ -353,7 +353,7 @@ func pullRepo(ctx context.Context, worktree *git.Worktree, opts SyncOptions) err
 
 	err = worktree.PullContext(ctx, &git.PullOptions{
 		RemoteName:      "origin",
-		SingleBranch:    false,
+		SingleBranch:    true,
 		Auth:            auth,
 		Force:           true,
 		InsecureSkipTLS: opts.Auth.InsecureSkipTLS,
