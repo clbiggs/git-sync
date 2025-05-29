@@ -11,6 +11,7 @@ import (
 
 	giturls "github.com/clbiggs/git-sync/pkg/git/git-urls"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -202,6 +203,9 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return fmt.Errorf("fetch failed: %w", err)
 		}
+		if errors.Is(err, git.NoErrAlreadyUpToDate) {
+			log.Println("Already up to date.")
+		}
 		log.Println("Fetch Completed.")
 
 		references, err := repo.References()
@@ -321,6 +325,7 @@ func fetchRepo(ctx context.Context, repo *git.Repository, opts SyncOptions) erro
 		Tags:            git.AllTags,
 		Prune:           true,
 		CABundle:        caBundle,
+		RefSpecs:        []config.RefSpec{"+refs/heads/*:refs/remotes/origin/*"},
 	})
 
 	return err
@@ -339,7 +344,7 @@ func pullRepo(ctx context.Context, worktree *git.Worktree, opts SyncOptions) err
 
 	err = worktree.PullContext(ctx, &git.PullOptions{
 		RemoteName:      "origin",
-		SingleBranch:    true,
+		SingleBranch:    false,
 		Auth:            auth,
 		Force:           true,
 		InsecureSkipTLS: opts.Auth.InsecureSkipTLS,
