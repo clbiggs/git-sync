@@ -213,10 +213,23 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 			return fmt.Errorf("failed to get worktree: %w", err)
 		}
 
-		remoteRef := plumbing.NewRemoteReferenceName("origin", opts.RefName.Short())
+		remoteRefName := plumbing.NewRemoteReferenceName("origin", opts.RefName.Short())
+		localRefName := plumbing.NewBranchReferenceName(opts.RefName.Short())
+
+		log.Printf("Checking out %s", remoteRefName.String())
+		remoteRef, err := repo.Reference(remoteRefName, true)
+		if err != nil {
+			return fmt.Errorf("could not find remote branch %s: %w", remoteRefName, err)
+		}
+
+		localRef := plumbing.NewHashReference(localRefName, remoteRef.Hash())
+
+		if err = repo.Storer.SetReference(localRef); err != nil {
+			return fmt.Errorf("failed to create local branch: %w", err)
+		}
 
 		err = w.Checkout(&git.CheckoutOptions{
-			Branch: remoteRef,
+			Branch: localRefName,
 			Force:  true,
 		})
 		if err != nil {
