@@ -193,13 +193,8 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 		return fmt.Errorf("failed to get HEAD reference: %w", err)
 	}
 
-	currentRef := headRef.String()
+	currentRef := headRef.Name().String()
 	if currentRef != opts.RefName {
-		w, err := repo.Worktree()
-		if err != nil {
-			return fmt.Errorf("failed to get worktree: %w", err)
-		}
-
 		log.Printf("Switching from reference %s to %s", currentRef, opts.RefName)
 
 		log.Println("Fetching Repo to get remote references...")
@@ -209,14 +204,65 @@ func switchReference(ctx context.Context, repo *git.Repository, opts SyncOptions
 		}
 		log.Println("Fetch Completed.")
 
+		branches, err := repo.Branches()
+		if err != nil {
+			return fmt.Errorf("no branches exist: %w", err)
+		}
+
+		// Dump branch list out for debugging right now
+		_ = branches.ForEach(func(r *plumbing.Reference) error {
+			log.Printf("%s\n", r.Name().String())
+			return nil
+		})
+
+		w, err := repo.Worktree()
+		if err != nil {
+			return fmt.Errorf("failed to get worktree: %w", err)
+		}
+
 		err = w.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewRemoteReferenceName("origin", opts.RefName),
+			Branch: plumbing.ReferenceName(opts.RefName),
 			Create: true,
 			Force:  true,
 		})
 		if err != nil {
 			return fmt.Errorf("checkout failed: %w", err)
 		}
+
+		err = removeOldBranches(repo)
+		if err != nil {
+			return fmt.Errorf("deleting old branches failed: %w", err)
+		}
+	}
+	return nil
+}
+
+func removeOldBranches(repo *git.Repository) error {
+	log.Println("Removing unused branches...")
+	headRef, err := repo.Head()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD: %w", err)
+	}
+	currentBranch := headRef.Name()
+
+	branches, err := repo.Branches()
+	if err != nil {
+		return fmt.Errorf("failed to list branches: %w", err)
+	}
+
+	err = branches.ForEach(func(ref *plumbing.Reference) error {
+		branchName := ref.Name()
+		if branchName != currentBranch {
+			err1 := repo.Storer.RemoveReference(ref.Name())
+			if err1 != nil {
+				return fmt.Errorf("failed to delete branch %s: %w", branchName, err1)
+			}
+			fmt.Printf("Deleted branch: %s\n", branchName)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	return nil
 }
