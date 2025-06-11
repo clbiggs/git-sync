@@ -67,7 +67,18 @@ func main() {
 	log.Printf("Performing Initial Sync...: %s", sync.Options.Auth.Repo)
 	err := sync.ForceSync()
 	if err != nil {
-		log.Fatalf("failed initial sync: %v", err)
+		log.Printf("failed initial sync: %v", err)
+
+		log.Println("Deleting local files and attempting pull...")
+		err = os.RemoveAll(config.Path)
+		if err != nil {
+			log.Fatalf("Error deleting local files: %v", err)
+		}
+
+		err = sync.ForceSync()
+		if err != nil {
+			log.Fatalf("failed to re-clone repo: %v", err)
+		}
 	}
 	log.Println("Initial Sync Completed.")
 

@@ -127,13 +127,13 @@ func (s *Syncer) syncRepo(ctx context.Context, forcePull bool) error {
 
 	switch {
 	case errors.Is(err, git.ErrRepositoryNotExists) || os.IsNotExist(err):
-		log.Println("Repo not found, Clonning...")
+		log.Println("Repo not found, Cloning...")
 		repo, err = cloneRepo(ctx, s.Options)
 		if err != nil {
 			return fmt.Errorf("clone failed: %w", err)
 		}
 
-		log.Println("Clonning Completed.")
+		log.Println("Cloning Completed.")
 	case err != nil:
 		return fmt.Errorf("failed to open repo: %w", err)
 	default:
