@@ -69,7 +69,7 @@ func main() {
 	if err != nil {
 		log.Printf("failed initial sync: %v", err)
 
-		log.Println("Deleting local files and attempting pull...")
+		log.Println("Deleting local files and attempting re-clone...")
 		err = os.RemoveAll(config.Path)
 		if err != nil {
 			log.Fatalf("Error deleting local files: %v", err)
